@@ -1,0 +1,7 @@
+{
+  "watchDir": "/path/to/path",
+  "zipDir": "/path/to/path",
+  "jsonFile": "manifest.json",
+  "zipFileName": "name_pack.zip",
+  "zip": "true"
+}
