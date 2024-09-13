@@ -12,6 +12,7 @@ import (
 	"time"
 )
 
+// Config struct to hold configuration values from config.json
 type Config struct {
 	WatchDir    string `json:"watchDir"`
 	ZipDir      string `json:"zipDir"`
@@ -26,12 +27,15 @@ var (
 )
 
 func main() {
+	// Load configuration from config.json
 	loadConfig()
 
+	// Check if watch directory and zip directory are the same
 	if config.WatchDir == config.ZipDir {
 		log.Fatal("Watch directory and zip directory cannot be the same.")
 	}
 
+	// Create a new file system watcher
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal(err)
@@ -46,25 +50,22 @@ func main() {
 				if !ok {
 					return
 				}
+				// Check if the event is a write or create event
 				if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Create == fsnotify.Create {
 					info, err := os.Stat(event.Name)
 					if err != nil {
 						log.Println("Error:", err)
 						continue
 					}
+					// Check if the modification time is after the last modified time
 					if info.ModTime().After(lastModifiedTime) {
 						log.Println("Modified file:", event.Name)
 						updateJSONFile()
+						// Zip or copy folder contents based on the config
 						if config.Zip {
-							err := zipFolderContents(config.WatchDir, filepath.Join(config.ZipDir, config.ZipFileName))
-							if err != nil {
-								return
-							}
+							zipFolderContents(config.WatchDir, filepath.Join(config.ZipDir, config.ZipFileName))
 						} else {
-							err := copyFolderContents(config.WatchDir, config.ZipDir)
-							if err != nil {
-								return
-							}
+							copyFolderContents(config.WatchDir, config.ZipDir)
 						}
 					}
 				}
@@ -77,11 +78,13 @@ func main() {
 		}
 	}()
 
+	// Add the watch directory to the watcher
 	err = watcher.Add(config.WatchDir)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// Walk through the watch directory and add all subdirectories to the watcher
 	err = filepath.Walk(config.WatchDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -98,6 +101,7 @@ func main() {
 	<-done
 }
 
+// Load configuration from config.json
 func loadConfig() {
 	file, err := os.Open("config.json")
 	if err != nil {
@@ -112,6 +116,7 @@ func loadConfig() {
 	}
 }
 
+// Update the JSON file with new UUIDs
 func updateJSONFile() {
 	filePath := filepath.Join(config.WatchDir, config.JsonFile)
 	file, err := os.ReadFile(filePath)
@@ -141,6 +146,7 @@ func updateJSONFile() {
 		log.Fatal(err)
 	}
 
+	// Generate new UUIDs for the header and modules
 	jsonConfig.Header.UUID = uuid.New().String()
 	for i := range jsonConfig.Modules {
 		jsonConfig.Modules[i].UUID = uuid.New().String()
@@ -159,6 +165,7 @@ func updateJSONFile() {
 	lastModifiedTime = time.Now()
 }
 
+// Zip the contents of the source directory and save it to the target file
 func zipFolderContents(source, target string) error {
 	zipfile, err := os.Create(target)
 	if err != nil {
@@ -216,6 +223,7 @@ func zipFolderContents(source, target string) error {
 	return err
 }
 
+// Copy the contents of the source directory to the target directory
 func copyFolderContents(source, target string) error {
 	return filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
