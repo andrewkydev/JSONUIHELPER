@@ -1,7 +1,7 @@
 {
-  "watchDir": "/path/to/path",
-  "zipDir": "/path/to/path",
+  "watchDir": "/root/dev/test1/rpHive2",
+  "zipDir": "/root/dev/test1/resource_packs/",
   "jsonFile": "manifest.json",
-  "zipFileName": "name_pack.zip",
-  "zip": "true"
+  "zipFileName": "andromeda.zip",
+  "zip": true
 }
